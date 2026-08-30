@@ -1,0 +1,8 @@
+import {useEffect,useMemo,useState} from "react";
+export default function SuspectList(){
+ const [data,setData]=useState([]),[sortBy,setSortBy]=useState("risk_score"),[agentId,setAgentId]=useState("");
+ useEffect(()=>{fetch("/api/v1/fraud/suspects").then(r=>r.json()).then(x=>setData(x.data||[]));},[]);
+ const rows=useMemo(()=>[...data].sort((a,b)=>(b[sortBy]||0)-(a[sortBy]||0)),[data,sortBy]);
+ async function mission(customer_id){if(!agentId)return alert("UUID agent requis");const r=await fetch("/api/v1/inspections/assign",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customer_id,agent_id:agentId})});alert(r.ok?"Mission créée":"Erreur");}
+ return <div className="p-6"><div className="flex gap-3 mb-4"><h1 className="text-2xl font-bold mr-auto">Clients suspects</h1><input className="border p-2" placeholder="UUID agent" value={agentId} onChange={e=>setAgentId(e.target.value)}/><select className="border p-2" value={sortBy} onChange={e=>setSortBy(e.target.value)}><option value="risk_score">Score</option><option value="estimated_loss_amount">Perte financière</option></select></div><table className="min-w-full bg-white"><thead><tr><th>Client</th><th>Score</th><th>kWh</th><th>Montant</th><th>Action</th></tr></thead><tbody>{rows.map(c=><tr className="border-t" key={c.customer_id}><td>{c.full_name||c.account_number}</td><td>{c.risk_score}%</td><td>{c.estimated_loss_kwh??"-"}</td><td>{c.estimated_loss_amount??"-"}</td><td><button className="bg-red-600 text-white px-3 py-2 rounded" onClick={()=>mission(c.customer_id)}>Créer mission</button></td></tr>)}</tbody></table></div>
+}
